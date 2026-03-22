@@ -1,0 +1,42 @@
+---
+- name: Đảm bảo Python3 đã được cài đặt trên hệ thống
+  hosts: all
+  become: yes
+  tasks:
+    - name: Kiểm tra xem python3 đã có sẵn chưa
+      command: python3 --version
+      register: python_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Thông báo nếu đã có Python
+      debug:
+        msg: "Python3 đã được cài đặt phiên bản: {{ python_check.stdout }}"
+      when: python_check.rc == 0
+
+    - name: Cài đặt Python3 trên các dòng Debian/Ubuntu
+      apt:
+        name: python3
+        state: present
+        update_cache: yes
+      when: 
+        - python_check.rc != 0 
+        - ansible_os_family == "Debian"
+
+    - name: Cài đặt Python3 trên các dòng RedHat/RHEL/Rocky
+      dnf:
+        name: python3
+        state: present
+      when: 
+        - python_check.rc != 0 
+        - ansible_os_family == "RedHat"
+
+    - name: Xác nhận lại sau khi cài đặt
+      command: python3 --version
+      register: final_check
+      when: python_check.rc != 0
+
+    - name: Hiển thị phiên bản vừa mới cài
+      debug:
+        msg: "Đã cài đặt thành công: {{ final_check.stdout }}"
+      when: python_check.rc != 0
