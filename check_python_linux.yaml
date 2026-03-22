@@ -1,0 +1,24 @@
+---
+- name: Kiểm tra phiên bản Python trên đa nền tảng
+  hosts: all
+  become: yes
+  tasks:
+    - name: Lấy thông tin phiên bản Python
+      shell: "python3 --version"
+      register: python_version_output
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Hiển thị kết quả kiểm tra
+      debug:
+        msg: 
+          - "Hệ điều hành: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Kết quả: {{ python_version_output.stdout if python_version_output.rc == 0 else 'Không tìm thấy Python3' }}"
+
+    - name: Lưu kết quả vào file cục bộ trên máy Control Node (Tùy chọn)
+      lineinfile:
+        path: "./python_report.txt"
+        line: "{{ inventory_hostname }} ({{ ansible_distribution }}): {{ python_version_output.stdout }}"
+        create: yes
+      delegate_to: localhost
+      become: no
